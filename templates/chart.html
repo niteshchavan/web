@@ -1,0 +1,154 @@
+<html>
+<title>WEB</title>
+<head>
+	<script src="https://cdn.anychart.com/releases/8.11.0/js/anychart-core.min.js" type="text/javascript"></script>
+	<script src="https://cdn.anychart.com/releases/8.11.0/js/anychart-stock.min.js" type="text/javascript"></script>
+	<script src="https://cdn.anychart.com/releases/8.11.0/js/anychart-data-adapter.min.js"></script>
+	<script src="https://cdn.anychart.com/releases/8.11.0/js/anychart-ui.min.js"></script>  
+
+	<link rel="stylesheet" type="text/css" href="https://cdn.anychart.com/releases/8.11.0/css/anychart-ui.min.css"/>
+</head>
+<body>
+  
+  <div id="container" ></div>
+  
+  <!-- This part handels all the tables names form database -->
+  <form id="stockForm">
+    <label for="dataSelect">Select data:</label>
+    <select id="dataSelect" name="stock_name">
+      <!-- Loop over stock options and dynamically generate <option> elements -->
+      {% for stock in stocks %}
+        <option value="/{{ stock }}">{{ stock }}</option>
+      {% endfor %}
+    </select>
+    <br>
+    <button type="submit">Submit</button>
+  </form>
+
+<script>
+
+	var chart; // Declare the chart variable outside the submit event listener
+
+	var form = document.querySelector("form");
+	var dataSelect = document.getElementById("dataSelect");
+	
+	<!-- This is button listner to capture submit button -->
+	form.addEventListener("submit", function(event) {
+		event.preventDefault(); // prevent form submission
+
+		if (chart) {
+			chart.dispose(); // Dispose of the previous chart instance
+		}
+
+anychart.data.loadJsonFile(dataSelect.value, function (data) {
+
+	
+    // create a data table
+    var table = anychart.data.table('date');
+    // add data
+    table.addData(data);
+   
+    // create a mapping for char
+    var mapping = table.mapAs({'open':'open','high': 'high','low': 'low','close': 'close'});
+
+	// Get close price for below 
+	var close = table.mapAs({'value': 'close'});
+	var rsi = table.mapAs({'value': 'rsi'});
+	var sma = table.mapAs({'value': 'sma'});
+	
+    // create a stock chart
+    chart = anychart.stock();
+	// set chart padding
+	chart.padding().right(50);
+
+	var plot = chart.plot(0);
+	// enabled x-grid/y-grid
+	plot.xGrid(true).yGrid(true);
+	
+	// set orientation y-axis to the right side
+	plot.yAxis().orientation('right');
+	
+	// create candlestick series on the plot
+	var series = plot.candlestick(mapping)
+	// set series settings
+	series.name(dataSelect.value).zIndex(50);
+        series
+          .risingFill('green', 0.5)
+          .fallingFill('red', 0.5)
+          .risingStroke('green', 0.5)
+          .fallingStroke('red', 0.5);
+		  
+
+
+	// Create new plot for RSI and SMA
+	//var plot2 = chart.plot(1);
+	var rsi_line = plot.line(rsi).stroke('green').name('RSI').zIndex(100);
+	//var	sma_line = plot.line(sma).stroke('red').name("SMA").zIndex(100);
+
+	// create volume series on the plot	
+	var Volume = table.mapAs({'value': 'volume'})
+	var volumeSeries = plot.column(Volume);
+	// set series settings
+	volumeSeries.name('Volume').zIndex(100).maxHeight('20%').bottom(0);	
+    volumeSeries.legendItem({
+    iconEnabled: false,
+    textOverflow: ''
+    });
+	
+	// create a logarithmic scale for volume
+    var customScale = anychart.scales.log();
+    // sets y-scale
+    volumeSeries.yScale(customScale);
+	
+	// create a logarithmic scale for rsi and sma
+	var scale2 = anychart.scales.log();
+	rsi_line.yScale(scale2);
+	
+	
+	
+    // set volume rising and falling stroke settings
+    volumeSeries.risingStroke('red');
+    volumeSeries.fallingStroke('green');
+
+    // set volume rising and falling fill settings
+    volumeSeries.risingFill('red .5');
+    volumeSeries.fallingFill('green .5');
+
+	//var psar = plot_1.psar(mapping, 0.08, 0.60, 0.10).series();
+	var psar = plot.psar(mapping, 0.02, 0.02, 0.2).series();
+		psar.stroke("0.5 lightGray");
+	
+	var rangePicker = anychart.ui.rangePicker();
+    var rangeSelector = anychart.ui.rangeSelector();
+	
+	// Date formated to YYYY-MM-DD
+	var date = new Date();
+	var todate = date.getFullYear() + '-' + ("0" + (date.getMonth() + 1)).slice(-2) + '-' + ("0" + date.getDate()).slice(-2)
+
+	date.setDate(date.getDate() - 180)
+	var fromdate = date.getFullYear() + '-' + ("0" + (date.getMonth() + 1)).slice(-2) + '-' + ("0" + date.getDate()).slice(-2)
+
+	// adjust the scroller
+		chart.selectRange(fromdate, todate);
+		chart.scroller().thumbs(false);
+		chart.scroller().fill('green 0.1');
+		chart.scroller().selectedFill('green 0.5');
+		chart.scroller().allowRangeChange(false);
+		chart.scroller(true);
+
+    // set container id for the chart
+		chart.container('container');
+
+    // initiate chart drawing
+		chart.draw();
+		rangePicker.render(chart);
+		rangeSelector.render(chart);
+
+	});
+
+});
+
+</script>
+</body>
+</html>
+                

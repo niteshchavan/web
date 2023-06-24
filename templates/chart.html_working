@@ -1,0 +1,116 @@
+<html>
+<title>WEB</title>
+<head>
+	<script src="https://cdn.anychart.com/releases/8.11.0/js/anychart-core.min.js" type="text/javascript"></script>
+	<script src="https://cdn.anychart.com/releases/8.11.0/js/anychart-stock.min.js" type="text/javascript"></script>
+	<script src="https://cdn.anychart.com/releases/8.11.0/js/anychart-data-adapter.min.js"></script>
+	<script src="https://cdn.anychart.com/releases/8.11.0/js/anychart-ui.min.js"></script>  
+
+	<link rel="stylesheet" type="text/css" href="https://cdn.anychart.com/releases/8.11.0/css/anychart-ui.min.css"/>
+</head>
+<body>
+  
+  <div id="container" ></div>
+  
+<form>
+  <label for="dataSelect">Select data:</label>
+  <select id="dataSelect" name="NIFTY">
+    <option value="/AFFLE">AFFLE</option>
+    <option value="/AMBUJACEM">AMBUJACEM</option>
+    <option value="/ASIANPAINT">ASIANPAINT</option>
+    <option value="/AUBANK">AUBANK</option>
+    <option value="/AWL">AWL</option>
+    <option value="/BAJAJFINSV">BAJAJFINSV</option>
+    <option value="/BERGEPAINT">BERGEPAINT</option>
+
+  </select>
+  <br>
+  <button type="submit">Submit</button>
+</form>
+
+<script>
+
+
+	var form = document.querySelector("form");
+	var dataSelect = document.getElementById("dataSelect");
+
+	form.addEventListener("submit", function(event) {
+		event.preventDefault(); // prevent form submission
+
+
+anychart.data.loadJsonFile(dataSelect.value, function (data) {
+
+	
+    // create a data table
+    var table = anychart.data.table('date');
+    // add data
+    table.addData(data);
+   
+    // create a mapping
+    var mapping = table.mapAs({'open':'open', 'high': 'high', 'low': 'low', 'close': 'close'});
+
+    // map loaded data
+    var rsi = table.mapAs({'value': 'rsi'});
+	var sma = table.mapAs({'value': 'sma'});
+	var close = table.mapAs({'value': 'close'});
+	
+    // create a stock chart
+    var chart = anychart.stock();
+	
+
+	var plot_1 = chart.plot(0);
+		plot_1.candlestick(mapping).name(dataSelect.value);
+
+
+	var plot_2 = chart.plot(1);
+		plot_2.line(rsi).stroke('green').name('RSI');	
+		plot_2.line(sma).stroke('red').name("SMA");
+
+
+	//var psar = plot_1.psar(mapping, 0.08, 0.60, 0.10).series();
+	var psar = plot_1.psar(mapping, 0.02, 0.02, 0.2).series();
+		psar.stroke("0.5 lightGray");
+	
+	var rangePicker = anychart.ui.rangePicker();
+    var rangeSelector = anychart.ui.rangeSelector();
+	
+	
+	// Date formated to YYYY-MM-DD
+	var date = new Date();
+	var todate = date.getFullYear() + '-' + ("0" + (date.getMonth() + 1)).slice(-2) + '-' + ("0" + date.getDate()).slice(-2)
+
+	date.setDate(date.getDate() - 180)
+	var fromdate = date.getFullYear() + '-' + ("0" + (date.getMonth() + 1)).slice(-2) + '-' + ("0" + date.getDate()).slice(-2)
+
+
+	// adjust the scroller
+		chart.selectRange(fromdate, todate);
+		chart.scroller().thumbs(false);
+		chart.scroller().fill('green 0.1');
+		chart.scroller().selectedFill('green 0.5');
+		chart.scroller().allowRangeChange(false);
+		chart.scroller(true);
+		
+
+
+    // set container id for the chart
+		chart.container('container');
+
+    // initiate chart drawing
+		chart.draw();
+		
+
+	
+	rangePicker.render(chart);
+	rangeSelector.render(chart);
+
+	
+});
+
+});
+
+</script>
+
+</body>
+</html>
+                
